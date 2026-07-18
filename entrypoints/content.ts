@@ -16,9 +16,13 @@ const SLOT_SEL = '[data-testid="swipe-to-dismiss"]';
 // rotated upright) at height = 3x width; normal sideways art never reaches it.
 const FRAME_ASPECT_CAP = 3;
 
-// A rotate arrow drawn clockwise; mirrored horizontally for the CCW variant.
-const ARROW =
-  '<path d="M21 2v6h-6"/><path d="M21 8a9 9 0 1 0 2.2 5.7"/>';
+// Lucide rotate-cw / rotate-ccw icon paths (MIT), one per direction.
+const ICON_CW =
+  '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>' +
+  '<path d="M21 3v5h-5"/>';
+const ICON_CCW =
+  '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>' +
+  '<path d="M3 3v5h5"/>';
 
 export default defineContentScript({
   matches: ['*://x.com/*', '*://twitter.com/*'],
@@ -320,11 +324,10 @@ function makeButton(
   btn.type = 'button';
   btn.title = label;
   btn.setAttribute('aria-label', label);
-  const inner = ccw ? `<g transform="translate(24,0) scale(-1,1)">${ARROW}</g>` : ARROW;
   btn.innerHTML =
     '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" ' +
-    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" ' +
-    `stroke-linejoin="round">${inner}</svg>`;
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+    `stroke-linejoin="round">${ccw ? ICON_CCW : ICON_CW}</svg>`;
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();

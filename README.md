@@ -32,3 +32,7 @@ npm run dev      # 自動リロード付き開発
 npm run build    # 本番ビルド
 npm run compile  # 型チェック
 ```
+
+## クレジット
+
+回転ボタンのアイコンは [Lucide](https://lucide.dev/)（`rotate-cw` / `rotate-ccw`、MIT License）を使用しています。
