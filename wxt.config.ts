@@ -3,7 +3,7 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   manifest: {
     name: 'X Image Rotator',
-    description: 'X (Twitter) の画像をワンクリックで回転',
+    description: 'SNSに流れてくる横向きのイラストを、ワンクリックで縦に戻す拡張機能。',
     permissions: ['contextMenus', 'storage'],
   },
 });
