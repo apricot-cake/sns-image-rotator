@@ -1,0 +1,26 @@
+{
+  "extName": {
+    "message": "社群媒體圖片旋轉器"
+  },
+  "extDescription": {
+    "message": "一鍵將社群媒體上橫向的插畫轉正的擴充功能。"
+  },
+  "menuRotateLeft": {
+    "message": "將圖片向左旋轉 90°"
+  },
+  "menuRotateRight": {
+    "message": "將圖片向右旋轉 90°"
+  },
+  "buttonRotateLeft": {
+    "message": "向左旋轉 90°"
+  },
+  "buttonRotateRight": {
+    "message": "向右旋轉 90°"
+  },
+  "popupHoverToggle": {
+    "message": "滑鼠移入時顯示旋轉按鈕"
+  },
+  "popupHint": {
+    "message": "右鍵選單中的「將圖片旋轉 90°」隨時可用。"
+  }
+}

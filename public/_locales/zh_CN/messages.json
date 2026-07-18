@@ -1,0 +1,26 @@
+{
+  "extName": {
+    "message": "社交媒体图片旋转器"
+  },
+  "extDescription": {
+    "message": "一键将社交媒体上横向的插画转正的扩展程序。"
+  },
+  "menuRotateLeft": {
+    "message": "将图片向左旋转 90°"
+  },
+  "menuRotateRight": {
+    "message": "将图片向右旋转 90°"
+  },
+  "buttonRotateLeft": {
+    "message": "向左旋转 90°"
+  },
+  "buttonRotateRight": {
+    "message": "向右旋转 90°"
+  },
+  "popupHoverToggle": {
+    "message": "悬停时显示旋转按钮"
+  },
+  "popupHint": {
+    "message": "右键菜单中的“将图片旋转 90°”始终可用。"
+  }
+}
