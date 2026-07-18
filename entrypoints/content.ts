@@ -11,6 +11,10 @@ const DISABLED_CLASS = 'xir-hover-off';
 const LIGHTBOX_SEL = '[aria-modal="true"]';
 const SLOT_SEL = '[data-testid="swipe-to-dismiss"]';
 
+// Cap for enlarged timeline frames, matching the portrait aspect X itself
+// grants to tall single images (width : height = 3 : 4).
+const FRAME_ASPECT_CAP = 4 / 3;
+
 // A rotate arrow drawn clockwise; mirrored horizontally for the CCW variant.
 const ARROW =
   '<path d="M21 2v6h-6"/><path d="M21 8a9 9 0 1 0 2.2 5.7"/>';
@@ -127,6 +131,8 @@ function rotate(host: HTMLElement, dir: number) {
     (((Number(host.getAttribute(ANGLE_ATTR) || 0) + dir) % 360) + 360) % 360;
   host.setAttribute(ANGLE_ATTR, String(angle));
 
+  if (!host.closest(LIGHTBOX_SEL) && rotateResizingFrame(host, angle)) return;
+
   const scale = angle % 180 === 0 ? 1 : fitScale(host);
   for (const target of rotationTargets(host)) {
     target.style.transformOrigin = 'center center';
@@ -134,6 +140,82 @@ function rotate(host: HTMLElement, dir: number) {
     target.style.transform =
       angle === 0 ? '' : `rotate(${angle}deg) scale(${scale})`;
   }
+}
+
+/** The aspect-ratio spacer that gives a timeline media frame its height:
+ *  a static div with an inline padding-bottom, sibling of the content
+ *  wrapper, a couple of levels above the tweetPhoto host. */
+function findFrameSpacer(host: HTMLElement): HTMLElement | null {
+  let anc = host.parentElement;
+  for (let i = 0; i < 4 && anc; i++, anc = anc.parentElement) {
+    for (const child of anc.children) {
+      if (
+        child instanceof HTMLElement &&
+        !child.contains(host) &&
+        (child.getAttribute('style') || '').includes('padding-bottom')
+      ) {
+        return child;
+      }
+    }
+  }
+  return null;
+}
+
+/** Quarter-turned timeline photos get a resized frame — the same portrait
+ *  frame X gives natively tall images — instead of shrinking into the old
+ *  one. Only for single photos: resizing one cell of a multi-image grid
+ *  would break the grid, and video posters would drag the player overlay
+ *  along, so both keep the fit-in-frame behavior. Returns false to fall
+ *  back to that behavior. */
+function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
+  const article = host.closest('article');
+  const isSinglePhoto =
+    !!article &&
+    article.querySelectorAll('[data-testid="tweetPhoto"]').length === 1 &&
+    !!host.querySelector(`img[src*="${MEDIA_URL}/media/"]`);
+  if (!isSinglePhoto) return false;
+  const spacer = findFrameSpacer(host);
+  if (!spacer) return false;
+
+  const d = host.dataset;
+  if (!d.xirW) {
+    const rect = host.getBoundingClientRect();
+    if (!rect.width || !rect.height) return false;
+    d.xirW = String(rect.width);
+    d.xirH = String(rect.height);
+    d.xirPb = spacer.style.paddingBottom;
+  }
+  const w = Number(d.xirW);
+  const h = Number(d.xirH);
+  const targets = rotationTargets(host);
+
+  if (angle % 180 === 0) {
+    spacer.style.paddingBottom = d.xirPb ?? '';
+    for (const t of targets) {
+      t.style.width = t.style.height = t.style.top = t.style.left = '';
+      t.style.transformOrigin = 'center center';
+      t.style.transition = 'transform 0.2s ease';
+      t.style.transform = angle === 0 ? '' : 'rotate(180deg)';
+    }
+    return true;
+  }
+
+  const ratio = Math.min(w / h, FRAME_ASPECT_CAP);
+  spacer.style.paddingBottom = `${(ratio * 100).toFixed(4)}%`;
+  const frameH = w * ratio;
+  const scale = Math.min(w / h, frameH / w);
+  for (const t of targets) {
+    // Lock the original box so X's own sizing doesn't restretch the image
+    // into the resized frame, then center it and rotate.
+    t.style.width = `${w}px`;
+    t.style.height = `${h}px`;
+    t.style.top = `${(frameH - h) / 2}px`;
+    t.style.left = '0px';
+    t.style.transformOrigin = 'center center';
+    t.style.transition = 'transform 0.2s ease';
+    t.style.transform = `rotate(${angle}deg) scale(${scale})`;
+  }
+  return true;
 }
 
 function rotateBySrc(srcUrl: string, dir: number) {
