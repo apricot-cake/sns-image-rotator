@@ -162,12 +162,23 @@ function findFrameSpacer(host: HTMLElement): HTMLElement | null {
   return null;
 }
 
-/** Quarter-turned timeline photos get a frame resized to the rotated image's
- *  own aspect ratio, so it fills the column width with no side margin,
- *  instead of shrinking into the old landscape frame. Only for single
- *  photos: resizing one cell of a multi-image grid would break the grid, and
- *  video posters would drag the player overlay along, so both keep the
- *  fit-in-frame behavior. Returns false to fall back to that behavior. */
+/** The ancestor whose inline max-width caps a portrait photo narrower than
+ *  the tweet column. Lifting it lets a rotated landscape image fill the
+ *  full content width. */
+function findWidthCap(from: HTMLElement): HTMLElement | null {
+  let el: HTMLElement | null = from;
+  for (let i = 0; i < 8 && el; i++, el = el.parentElement) {
+    if ((el.getAttribute('style') || '').includes('max-width')) return el;
+  }
+  return null;
+}
+
+/** Quarter-turned timeline photos get a frame resized to fill the tweet's
+ *  content column at the rotated image's aspect ratio — as large as it fits
+ *  with no side margin — instead of staying inside the original frame. Only
+ *  for single photos: resizing one cell of a multi-image grid would break
+ *  the grid, and video posters would drag the player overlay along, so both
+ *  keep the fit-in-frame behavior. Returns false to fall back to that. */
 function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
   const article = host.closest('article');
   const isSinglePhoto =
@@ -181,6 +192,7 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
   // (which the padding-bottom alone can't override), so drive both.
   const sizer = spacer?.parentElement;
   if (!spacer || !sizer) return false;
+  const widthCap = findWidthCap(sizer);
 
   const d = host.dataset;
   if (!d.xirW) {
@@ -190,6 +202,8 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     d.xirH = String(rect.height);
     d.xirPb = spacer.style.paddingBottom;
     d.xirSizerH = sizer.style.height;
+    d.xirSizerW = sizer.style.width;
+    d.xirCapW = widthCap ? widthCap.style.maxWidth : '';
   }
   const w = Number(d.xirW);
   const h = Number(d.xirH);
@@ -198,6 +212,8 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
   if (angle % 180 === 0) {
     spacer.style.paddingBottom = d.xirPb ?? '';
     sizer.style.height = d.xirSizerH ?? '';
+    sizer.style.width = d.xirSizerW ?? '';
+    if (widthCap) widthCap.style.maxWidth = d.xirCapW ?? '';
     for (const t of targets) {
       t.style.width = t.style.height = t.style.top = t.style.left = '';
       t.style.transformOrigin = 'center center';
@@ -207,18 +223,25 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     return true;
   }
 
+  // Fill the content column (the cap's parent) at the rotated aspect ratio.
+  const contentW = widthCap?.parentElement
+    ? widthCap.parentElement.getBoundingClientRect().width
+    : w;
   const ratio = Math.min(w / h, FRAME_ASPECT_CAP);
-  const frameH = w * ratio;
-  spacer.style.paddingBottom = `${(ratio * 100).toFixed(4)}%`;
+  const frameW = contentW;
+  const frameH = frameW * ratio;
+  if (widthCap) widthCap.style.maxWidth = `${contentW}px`;
+  sizer.style.width = `${frameW}px`;
   sizer.style.height = `${frameH}px`;
-  const scale = Math.min(w / h, frameH / w);
+  spacer.style.paddingBottom = `${(ratio * 100).toFixed(4)}%`;
+  const scale = Math.min(frameW / h, frameH / w);
   for (const t of targets) {
     // Lock the original box so X's own sizing doesn't restretch the image
-    // into the resized frame, then center it and rotate.
+    // into the resized frame, then center it in the frame and rotate.
     t.style.width = `${w}px`;
     t.style.height = `${h}px`;
+    t.style.left = `${(frameW - w) / 2}px`;
     t.style.top = `${(frameH - h) / 2}px`;
-    t.style.left = '0px';
     t.style.transformOrigin = 'center center';
     t.style.transition = 'transform 0.2s ease';
     t.style.transform = `rotate(${angle}deg) scale(${scale})`;
