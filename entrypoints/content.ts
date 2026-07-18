@@ -134,10 +134,14 @@ function rotate(host: HTMLElement, dir: number) {
 
   if (!host.closest(LIGHTBOX_SEL) && rotateResizingFrame(host, angle)) return;
 
+  // Animate the spin only in the lightbox, where the frame is fixed and a
+  // smooth rotation reads well; in the feed the frame stays put too but a
+  // snap keeps it consistent with the resized single-photo case.
+  const anim = host.closest(LIGHTBOX_SEL) ? 'transform 0.2s ease' : 'none';
   const scale = angle % 180 === 0 ? 1 : fitScale(host);
   for (const target of rotationTargets(host)) {
     target.style.transformOrigin = 'center center';
-    target.style.transition = 'transform 0.2s ease';
+    target.style.transition = anim;
     target.style.transform =
       angle === 0 ? '' : `rotate(${angle}deg) scale(${scale})`;
   }
@@ -237,7 +241,9 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     for (const t of targets) {
       t.style.width = t.style.height = t.style.top = t.style.left = '';
       t.style.transformOrigin = 'center center';
-      t.style.transition = 'transform 0.2s ease';
+      // Snap instantly: the frame resizes in one step, so animating the image
+    // would leave it spinning inside an already-resized frame.
+    t.style.transition = 'none';
       t.style.transform = angle === 0 ? '' : 'rotate(180deg)';
     }
     return true;
@@ -277,7 +283,9 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     t.style.left = `${(frameW - w) / 2}px`;
     t.style.top = `${(frameH - h) / 2}px`;
     t.style.transformOrigin = 'center center';
-    t.style.transition = 'transform 0.2s ease';
+    // Snap instantly: the frame resizes in one step, so animating the image
+    // would leave it spinning inside an already-resized frame.
+    t.style.transition = 'none';
     t.style.transform = `rotate(${angle}deg) scale(${scale})`;
   }
   return true;
