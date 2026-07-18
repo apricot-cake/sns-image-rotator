@@ -45,7 +45,7 @@ export function runRotator(adapter: SiteAdapter) {
 }
 
 async function applyHoverSetting() {
-  const { hoverButton } = await browser.storage.sync.get({ hoverButton: true });
+  const { hoverButton } = await browser.storage.sync.get({ hoverButton: false });
   document.documentElement.classList.toggle(DISABLED_CLASS, !hoverButton);
 }
 

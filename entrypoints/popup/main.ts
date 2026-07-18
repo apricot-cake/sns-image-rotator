@@ -4,7 +4,7 @@ document.title = browser.i18n.getMessage('extName');
 
 const checkbox = document.getElementById('hoverButton') as HTMLInputElement;
 
-browser.storage.sync.get({ hoverButton: true }).then(({ hoverButton }) => {
+browser.storage.sync.get({ hoverButton: false }).then(({ hoverButton }) => {
   checkbox.checked = Boolean(hoverButton);
 });
 
