@@ -173,6 +173,17 @@ function findWidthCap(from: HTMLElement): HTMLElement | null {
   return null;
 }
 
+/** The rounded media card that paints X's pale-blue media background. It
+ *  stays at full column width on its own, which would show as side bands
+ *  around a narrower rotated frame, so it must shrink-wrap the frame. */
+function findMediaCard(host: HTMLElement): HTMLElement | null {
+  let el = host.parentElement;
+  for (let i = 0; i < 10 && el; i++, el = el.parentElement) {
+    if (parseFloat(getComputedStyle(el).borderRadius) >= 8) return el;
+  }
+  return null;
+}
+
 /** Quarter-turned timeline photos get a frame resized to fill the tweet's
  *  content column at the rotated image's aspect ratio — as large as it fits
  *  with no side margin — instead of staying inside the original frame. Only
@@ -193,6 +204,7 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
   const sizer = spacer?.parentElement;
   if (!spacer || !sizer) return false;
   const widthCap = findWidthCap(sizer);
+  const card = findMediaCard(host);
 
   const d = host.dataset;
   if (!d.xirW) {
@@ -205,6 +217,8 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     d.xirSizerW = sizer.style.width;
     d.xirSizerM = sizer.style.margin;
     d.xirCapW = widthCap ? widthCap.style.maxWidth : '';
+    d.xirCardW = card ? card.style.width : '';
+    d.xirCardM = card ? card.style.margin : '';
   }
   const w = Number(d.xirW);
   const h = Number(d.xirH);
@@ -216,6 +230,10 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     sizer.style.width = d.xirSizerW ?? '';
     sizer.style.margin = d.xirSizerM ?? '';
     if (widthCap) widthCap.style.maxWidth = d.xirCapW ?? '';
+    if (card) {
+      card.style.width = d.xirCardW ?? '';
+      card.style.margin = d.xirCardM ?? '';
+    }
     for (const t of targets) {
       t.style.width = t.style.height = t.style.top = t.style.left = '';
       t.style.transformOrigin = 'center center';
@@ -243,6 +261,12 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
   // Centre the frame when it is narrower than the column (a height-capped
   // tall image) so any leftover column space is even on both sides.
   sizer.style.margin = '0 auto';
+  // Shrink-wrap the rounded media card too, or its pale-blue background
+  // shows as bands on both sides of the narrower frame.
+  if (card) {
+    card.style.width = 'fit-content';
+    card.style.margin = '0 auto';
+  }
   spacer.style.paddingBottom = `${((frameH / frameW) * 100).toFixed(4)}%`;
   const scale = Math.min(frameW / h, frameH / w);
   for (const t of targets) {
