@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "SNS画像回転"
+  },
+  "extDescription": {
+    "message": "SNSに流れてくる横向きのイラストを、ワンクリックで縦に戻す拡張機能。"
+  }
+}
