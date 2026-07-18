@@ -11,9 +11,10 @@ const DISABLED_CLASS = 'xir-hover-off';
 const LIGHTBOX_SEL = '[aria-modal="true"]';
 const SLOT_SEL = '[data-testid="swipe-to-dismiss"]';
 
-// Cap for enlarged timeline frames, matching the portrait aspect X itself
-// grants to tall single images (width : height = 3 : 4).
-const FRAME_ASPECT_CAP = 4 / 3;
+// Enlarged timeline frames take the rotated image's own aspect ratio so it
+// fills them edge to edge. This only bounds pathological cases (a panorama
+// rotated upright) at height = 3x width; normal sideways art never reaches it.
+const FRAME_ASPECT_CAP = 3;
 
 // A rotate arrow drawn clockwise; mirrored horizontally for the CCW variant.
 const ARROW =
@@ -161,12 +162,12 @@ function findFrameSpacer(host: HTMLElement): HTMLElement | null {
   return null;
 }
 
-/** Quarter-turned timeline photos get a resized frame — the same portrait
- *  frame X gives natively tall images — instead of shrinking into the old
- *  one. Only for single photos: resizing one cell of a multi-image grid
- *  would break the grid, and video posters would drag the player overlay
- *  along, so both keep the fit-in-frame behavior. Returns false to fall
- *  back to that behavior. */
+/** Quarter-turned timeline photos get a frame resized to the rotated image's
+ *  own aspect ratio, so it fills the column width with no side margin,
+ *  instead of shrinking into the old landscape frame. Only for single
+ *  photos: resizing one cell of a multi-image grid would break the grid, and
+ *  video posters would drag the player overlay along, so both keep the
+ *  fit-in-frame behavior. Returns false to fall back to that behavior. */
 function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
   const article = host.closest('article');
   const isSinglePhoto =
