@@ -1,7 +1,9 @@
+import { SITE_MATCHES } from '../lib/sites';
+
 export default defineBackground(() => {
   const items = [
-    { id: 'xir-rotate-left', title: '画像を左に90°回転' },
-    { id: 'xir-rotate-right', title: '画像を右に90°回転' },
+    { id: 'sir-rotate-left', title: '画像を左に90°回転' },
+    { id: 'sir-rotate-right', title: '画像を右に90°回転' },
   ];
 
   const createMenu = () => {
@@ -11,7 +13,7 @@ export default defineBackground(() => {
           id: item.id,
           title: item.title,
           contexts: ['image'],
-          documentUrlPatterns: ['*://x.com/*', '*://twitter.com/*'],
+          documentUrlPatterns: SITE_MATCHES,
         });
       }
     });
@@ -21,9 +23,9 @@ export default defineBackground(() => {
 
   browser.contextMenus.onClicked.addListener((info, tab) => {
     const dir =
-      info.menuItemId === 'xir-rotate-left'
+      info.menuItemId === 'sir-rotate-left'
         ? -90
-        : info.menuItemId === 'xir-rotate-right'
+        : info.menuItemId === 'sir-rotate-right'
           ? 90
           : 0;
     if (dir && info.srcUrl && tab?.id != null) {
