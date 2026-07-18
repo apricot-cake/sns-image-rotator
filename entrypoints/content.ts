@@ -176,7 +176,11 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     !!host.querySelector(`img[src*="${MEDIA_URL}/media/"]`);
   if (!isSinglePhoto) return false;
   const spacer = findFrameSpacer(host);
-  if (!spacer) return false;
+  // The spacer's parent is the frame sizer. Its height may come from the
+  // spacer's padding-bottom or from an inline `height` X sets directly
+  // (which the padding-bottom alone can't override), so drive both.
+  const sizer = spacer?.parentElement;
+  if (!spacer || !sizer) return false;
 
   const d = host.dataset;
   if (!d.xirW) {
@@ -185,6 +189,7 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     d.xirW = String(rect.width);
     d.xirH = String(rect.height);
     d.xirPb = spacer.style.paddingBottom;
+    d.xirSizerH = sizer.style.height;
   }
   const w = Number(d.xirW);
   const h = Number(d.xirH);
@@ -192,6 +197,7 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
 
   if (angle % 180 === 0) {
     spacer.style.paddingBottom = d.xirPb ?? '';
+    sizer.style.height = d.xirSizerH ?? '';
     for (const t of targets) {
       t.style.width = t.style.height = t.style.top = t.style.left = '';
       t.style.transformOrigin = 'center center';
@@ -202,8 +208,9 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
   }
 
   const ratio = Math.min(w / h, FRAME_ASPECT_CAP);
-  spacer.style.paddingBottom = `${(ratio * 100).toFixed(4)}%`;
   const frameH = w * ratio;
+  spacer.style.paddingBottom = `${(ratio * 100).toFixed(4)}%`;
+  sizer.style.height = `${frameH}px`;
   const scale = Math.min(w / h, frameH / w);
   for (const t of targets) {
     // Lock the original box so X's own sizing doesn't restretch the image
