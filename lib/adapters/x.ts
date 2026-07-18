@@ -5,9 +5,51 @@
 
 import { GROUP_CLASS, HOST_ATTR, type SiteAdapter } from '../adapter';
 
-const MEDIA_URL = 'pbs.twimg.com';
+const MEDIA_HOST = 'pbs.twimg.com';
 const LIGHTBOX_SEL = '[aria-modal="true"]';
 const SLOT_SEL = '[data-testid="swipe-to-dismiss"]';
+
+/** Whether `url` is served by X's photo CDN, checked on the parsed hostname so
+ *  a lookalike path segment (e.g. https://evil.example/pbs.twimg.com/x.jpg)
+ *  can't pass the way a substring match would. */
+function isMediaUrl(url: string): boolean {
+  let host: string;
+  try {
+    host = new URL(url, location.href).hostname;
+  } catch {
+    return false;
+  }
+  return host === MEDIA_HOST || host.endsWith(`.${MEDIA_HOST}`);
+}
+
+/** The URL inside a CSS `url(...)` value (e.g. a computed background-image), or
+ *  null when there is none. */
+function cssUrl(value: string): string | null {
+  const m = /url\((["']?)([^"')]+)\1\)/.exec(value);
+  return m ? m[2] : null;
+}
+
+/** The first CDN-hosted <img> inside `root`, or null. */
+function findMediaImg(root: Element): HTMLImageElement | null {
+  for (const img of root.querySelectorAll<HTMLImageElement>('img')) {
+    if (isMediaUrl(img.src)) return img;
+  }
+  return null;
+}
+
+/** Whether `host` holds a CDN photo (a `/media/` image), as opposed to a video
+ *  poster or other CDN asset, which single-photo frame resizing keys off. */
+function hasMediaPhoto(host: HTMLElement): boolean {
+  for (const img of host.querySelectorAll<HTMLImageElement>('img')) {
+    if (!isMediaUrl(img.src)) continue;
+    try {
+      if (new URL(img.src, location.href).pathname.startsWith('/media/')) return true;
+    } catch {
+      // Ignore an unparseable src and keep scanning.
+    }
+  }
+  return false;
+}
 
 // Enlarged timeline frames take the rotated image's own aspect ratio so it
 // fills them edge to edge. This only bounds pathological cases (a panorama
@@ -38,9 +80,7 @@ function resolveHost(el: Element | null): HTMLElement | null {
   const modal = el.closest<HTMLElement>(LIGHTBOX_SEL);
   if (modal) {
     const img =
-      el instanceof HTMLImageElement && el.src.includes(MEDIA_URL)
-        ? el
-        : el.querySelector<HTMLImageElement>(`img[src*="${MEDIA_URL}"]`);
+      el instanceof HTMLImageElement && isMediaUrl(el.src) ? el : findMediaImg(el);
     const parent = img?.parentElement;
     if (parent) {
       if (getComputedStyle(parent).position === 'static') {
@@ -74,12 +114,11 @@ function applyRotation(host: HTMLElement, angle: number) {
 function rotationTargets(host: HTMLElement): HTMLElement[] {
   const targets: HTMLElement[] = [];
   for (const div of host.querySelectorAll<HTMLElement>('div')) {
-    if (getComputedStyle(div).backgroundImage.includes(MEDIA_URL)) {
-      targets.push(div);
-    }
+    const url = cssUrl(getComputedStyle(div).backgroundImage);
+    if (url && isMediaUrl(url)) targets.push(div);
   }
   for (const img of host.querySelectorAll<HTMLImageElement>('img')) {
-    if (img.src.includes(MEDIA_URL)) targets.push(img);
+    if (isMediaUrl(img.src)) targets.push(img);
   }
   if (!targets.length) {
     const self = host.querySelector<HTMLImageElement>('img');
@@ -168,7 +207,7 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
   const isSinglePhoto =
     !!article &&
     article.querySelectorAll('[data-testid="tweetPhoto"]').length === 1 &&
-    !!host.querySelector(`img[src*="${MEDIA_URL}/media/"]`);
+    hasMediaPhoto(host);
   if (!isSinglePhoto) return false;
   const spacer = findFrameSpacer(host);
   // The spacer's parent is the frame sizer. Its height may come from the

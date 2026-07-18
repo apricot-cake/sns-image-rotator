@@ -8,13 +8,17 @@ const ANGLE_ATTR = 'data-sir-angle';
 const BTN_CLASS = 'sir-btn';
 const DISABLED_CLASS = 'sir-hover-off';
 
-// Lucide rotate-cw / rotate-ccw icon paths (MIT), one per direction.
-const ICON_CW =
-  '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>' +
-  '<path d="M21 3v5h-5"/>';
-const ICON_CCW =
-  '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>' +
-  '<path d="M3 3v5h5"/>';
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+// Lucide rotate-cw / rotate-ccw icon path data (MIT), one array per direction.
+const ICON_CW = [
+  'M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8',
+  'M21 3v5h-5',
+];
+const ICON_CCW = [
+  'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8',
+  'M3 3v5h5',
+];
 
 /** Wire up the rotator on the current page using the given site adapter. */
 export function runRotator(adapter: SiteAdapter) {
@@ -90,16 +94,33 @@ function makeButton(
   btn.type = 'button';
   btn.title = label;
   btn.setAttribute('aria-label', label);
-  btn.innerHTML =
-    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" ' +
-    'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
-    `stroke-linejoin="round">${ccw ? ICON_CCW : ICON_CW}</svg>`;
+  btn.appendChild(makeIcon(ccw ? ICON_CCW : ICON_CW));
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     rotate(adapter, host, dir);
   });
   return btn;
+}
+
+/** Build an SVG icon from Lucide path data via the DOM, so the strings are set
+ *  as attribute values and never parsed as markup. */
+function makeIcon(paths: string[]): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  for (const d of paths) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  }
+  return svg;
 }
 
 function injectStyles(adapter: SiteAdapter) {
