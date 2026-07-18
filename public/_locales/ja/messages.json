@@ -4,5 +4,23 @@
   },
   "extDescription": {
     "message": "SNSに流れてくる横向きのイラストを、ワンクリックで縦に戻す拡張機能。"
+  },
+  "menuRotateLeft": {
+    "message": "画像を左に90°回転"
+  },
+  "menuRotateRight": {
+    "message": "画像を右に90°回転"
+  },
+  "buttonRotateLeft": {
+    "message": "左に90°回転"
+  },
+  "buttonRotateRight": {
+    "message": "右に90°回転"
+  },
+  "popupHoverToggle": {
+    "message": "ホバーで回転ボタンを表示"
+  },
+  "popupHint": {
+    "message": "右クリックメニューの「画像を90°回転」は常に使えます。"
   }
 }

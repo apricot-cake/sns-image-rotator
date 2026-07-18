@@ -4,5 +4,23 @@
   },
   "extDescription": {
     "message": "Rotate sideways illustrations on social media back upright with one click."
+  },
+  "menuRotateLeft": {
+    "message": "Rotate image 90° left"
+  },
+  "menuRotateRight": {
+    "message": "Rotate image 90° right"
+  },
+  "buttonRotateLeft": {
+    "message": "Rotate 90° left"
+  },
+  "buttonRotateRight": {
+    "message": "Rotate 90° right"
+  },
+  "popupHoverToggle": {
+    "message": "Show rotate buttons on hover"
+  },
+  "popupHint": {
+    "message": "The right-click “Rotate image 90°” menu is always available."
   }
 }

@@ -2,8 +2,8 @@ import { SITE_MATCHES } from '../lib/sites';
 
 export default defineBackground(() => {
   const items = [
-    { id: 'sir-rotate-left', title: '画像を左に90°回転' },
-    { id: 'sir-rotate-right', title: '画像を右に90°回転' },
+    { id: 'sir-rotate-left', title: browser.i18n.getMessage('menuRotateLeft') },
+    { id: 'sir-rotate-right', title: browser.i18n.getMessage('menuRotateRight') },
   ];
 
   const createMenu = () => {

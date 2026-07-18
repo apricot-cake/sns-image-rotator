@@ -77,8 +77,12 @@ function rotate(adapter: SiteAdapter, host: HTMLElement, dir: number) {
 function attachButtons(adapter: SiteAdapter, host: HTMLElement) {
   const group = document.createElement('div');
   group.className = GROUP_CLASS;
-  group.appendChild(makeButton(adapter, host, -90, true, '左に90°回転'));
-  group.appendChild(makeButton(adapter, host, 90, false, '右に90°回転'));
+  group.appendChild(
+    makeButton(adapter, host, -90, true, browser.i18n.getMessage('buttonRotateLeft')),
+  );
+  group.appendChild(
+    makeButton(adapter, host, 90, false, browser.i18n.getMessage('buttonRotateRight')),
+  );
   host.appendChild(group);
 }
 
