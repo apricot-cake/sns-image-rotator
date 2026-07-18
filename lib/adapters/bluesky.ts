@@ -10,12 +10,21 @@
 // cells (resizing one would break the grid) and any unrecognised structure fall
 // back to scaling the rotation down to fit inside the fixed frame.
 
-import { type SiteAdapter } from '../adapter';
+import { GROUP_CLASS, HOST_ATTR, type SiteAdapter } from '../adapter';
 
 // Post photos load from this CDN path (feed_thumbnail in the timeline,
 // feed_fullsize in the viewer). External link-card previews reuse the same
 // path, so a media <img> alone doesn't prove a rotatable photo — see resolveHost.
 const MEDIA_PATH = '/img/feed_';
+
+// The fullscreen lightbox: its overlay, the enlarged photo (always the
+// feed_fullsize preset), and the expo-image box that lays the photo out under
+// object-fit:cover-contain and clips it to the viewport. The box is what a
+// quarter-turned photo is scaled to fill; the close/menu/nav controls around it
+// are all role="button" siblings, so keying off the photo keeps us off them.
+const LIGHTBOX_SEL = '[role="dialog"][aria-modal="true"]';
+const FULLSIZE_PATH = '/img/feed_fullsize/';
+const SLOT_SEL = '[data-expoimage="true"]';
 
 // A resized single-photo frame takes the rotated image's own aspect ratio so it
 // fills the column edge to edge. This only bounds pathological cases (a panorama
@@ -23,24 +32,51 @@ const MEDIA_PATH = '/img/feed_';
 const FRAME_ASPECT_CAP = 3;
 
 export const blueskyAdapter: SiteAdapter = {
+  // In the lightbox the default top-right corner is Bluesky's close button and
+  // the top-left its options menu, so drop the rotate buttons below the close
+  // button, clear of both.
+  styles: `
+    ${LIGHTBOX_SEL} [${HOST_ATTR}] > .${GROUP_CLASS} {
+      top: 76px;
+      right: 20px;
+    }`,
   resolveHost,
   applyRotation,
 };
 
-/** The `role="button"` frame that owns a post photo, given any descendant the
- *  pointer is over. Bluesky wraps tappable photos in a button and external
- *  link-card thumbnails in an <a role="link">; keying off the nearest button
- *  that actually contains a media <img> keeps us on photos and off link cards. */
+/** The container owning a post photo under `el`: the fullscreen lightbox's
+ *  photo box when the pointer is inside the viewer, otherwise the timeline
+ *  `role="button"` frame. Bluesky wraps tappable timeline photos in a button
+ *  and external link-card thumbnails in an <a role="link">; keying off the
+ *  nearest button that actually contains a media <img> keeps us on photos and
+ *  off link cards. */
 function resolveHost(el: Element | null): HTMLElement | null {
   if (!(el instanceof Element)) return null;
+
+  // Lightbox: the enlarged photo sits in an expo-image box inside the viewer
+  // overlay. Prefer the box under the pointer; when hovering the surrounding
+  // chrome, fall back to the viewer's photo so the buttons still appear.
+  const overlay = el.closest<HTMLElement>(LIGHTBOX_SEL);
+  if (overlay) {
+    const box = el.closest<HTMLElement>(SLOT_SEL);
+    if (box) return box;
+    const img = overlay.querySelector<HTMLImageElement>(`img[src*="${FULLSIZE_PATH}"]`);
+    return img?.closest<HTMLElement>(SLOT_SEL) ?? img?.parentElement ?? null;
+  }
+
   const frame = el.closest<HTMLElement>('[role="button"]');
   if (frame && frame.querySelector(`img[src*="${MEDIA_PATH}"]`)) return frame;
   return null;
 }
 
-/** Apply the absolute angle: resize the frame for single timeline photos, else
- *  scale the rotation to fit inside the fixed frame (square grid cells, etc.). */
+/** Apply the absolute angle: spin the photo in place inside the fixed lightbox
+ *  slot, resize the frame for single timeline photos, else scale the rotation
+ *  to fit inside the fixed frame (square grid cells, etc.). */
 function applyRotation(host: HTMLElement, angle: number) {
+  if (host.closest(LIGHTBOX_SEL)) {
+    rotateLightbox(host, angle);
+    return;
+  }
   if (rotateResizingFrame(host, angle)) return;
 
   const scale = angle % 180 === 0 ? 1 : fitScale(host);
@@ -48,6 +84,37 @@ function applyRotation(host: HTMLElement, angle: number) {
     img.style.transformOrigin = 'center center';
     img.style.transform = angle === 0 ? '' : `rotate(${angle}deg) scale(${scale})`;
   }
+}
+
+/** Rotate the enlarged lightbox photo in place. Its box already fills and clips
+ *  to the viewport, so unlike the timeline there is no frame to resize — just
+ *  turn the <img> and scale a quarter-turn up to fill the viewport slot. */
+function rotateLightbox(host: HTMLElement, angle: number) {
+  const img = host.querySelector<HTMLImageElement>(`img[src*="${FULLSIZE_PATH}"]`);
+  if (!img) return;
+  const scale = angle % 180 === 0 ? 1 : lightboxFitScale(host, img);
+  img.style.transformOrigin = 'center center';
+  // Animate the spin: the slot is fixed here, so a smooth turn reads well (the
+  // timeline snaps instead because its frame resizes in the same step).
+  img.style.transition = 'transform 0.2s ease';
+  img.style.transform = angle === 0 ? '' : `rotate(${angle}deg) scale(${scale})`;
+}
+
+/** How much to scale a quarter-turned lightbox photo so it fills the viewport
+ *  slot. object-fit:contain first fits the upright photo into the slot; after a
+ *  90° turn its on-screen bounds are that fitted size with width and height
+ *  swapped, so scale it back up to the slot. */
+function lightboxFitScale(host: HTMLElement, img: HTMLImageElement): number {
+  const slot = host.getBoundingClientRect();
+  const nw = img.naturalWidth;
+  const nh = img.naturalHeight;
+  if (!slot.width || !slot.height || !nw || !nh) return 1;
+  // The upright photo's displayed size under object-fit:contain.
+  const contain = Math.min(slot.width / nw, slot.height / nh);
+  const dispW = nw * contain;
+  const dispH = nh * contain;
+  // Turned a quarter, it occupies dispH × dispW; refit that to the slot.
+  return Math.min(slot.width / dispH, slot.height / dispW);
 }
 
 /** How much to shrink a quarter-turned photo so its swapped-dimension bounds
