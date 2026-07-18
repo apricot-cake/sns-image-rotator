@@ -223,17 +223,21 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     return true;
   }
 
-  // Fill the content column (the cap's parent) at the rotated aspect ratio.
+  // Fill the content column (the cap's parent) at the rotated aspect ratio,
+  // but cap the height to the viewport so a tall rotation stays fully on
+  // screen instead of overflowing: past that point the image letterboxes
+  // slightly within the column rather than being cut off.
   const contentW = widthCap?.parentElement
     ? widthCap.parentElement.getBoundingClientRect().width
     : w;
   const ratio = Math.min(w / h, FRAME_ASPECT_CAP);
+  const maxH = Math.max(300, window.innerHeight - 64);
   const frameW = contentW;
-  const frameH = frameW * ratio;
+  const frameH = Math.min(frameW * ratio, maxH);
   if (widthCap) widthCap.style.maxWidth = `${contentW}px`;
   sizer.style.width = `${frameW}px`;
   sizer.style.height = `${frameH}px`;
-  spacer.style.paddingBottom = `${(ratio * 100).toFixed(4)}%`;
+  spacer.style.paddingBottom = `${((frameH / frameW) * 100).toFixed(4)}%`;
   const scale = Math.min(frameW / h, frameH / w);
   for (const t of targets) {
     // Lock the original box so X's own sizing doesn't restretch the image
