@@ -5,8 +5,15 @@
 const MEDIA_URL = 'pbs.twimg.com';
 const HOST_ATTR = 'data-xir-host';
 const ANGLE_ATTR = 'data-xir-angle';
+const GROUP_CLASS = 'xir-group';
 const BTN_CLASS = 'xir-btn';
 const DISABLED_CLASS = 'xir-hover-off';
+const LIGHTBOX_SEL = '[aria-modal="true"]';
+const SLOT_SEL = '[data-testid="swipe-to-dismiss"]';
+
+// A rotate arrow drawn clockwise; mirrored horizontally for the CCW variant.
+const ARROW =
+  '<path d="M21 2v6h-6"/><path d="M21 8a9 9 0 1 0 2.2 5.7"/>';
 
 export default defineContentScript({
   matches: ['*://x.com/*', '*://twitter.com/*'],
@@ -21,12 +28,14 @@ export default defineContentScript({
     // the host is hovered.
     document.addEventListener('mouseover', (e) => {
       const host = resolveHost(e.target as Element | null);
-      if (host && !host.querySelector(`.${BTN_CLASS}`)) attachButton(host);
+      if (host && !host.querySelector(`.${GROUP_CLASS}`)) attachButtons(host);
     });
 
     browser.runtime.onMessage.addListener((message: unknown) => {
-      const msg = message as { type?: string; srcUrl?: string };
-      if (msg.type === 'rotate' && msg.srcUrl) rotateBySrc(msg.srcUrl);
+      const msg = message as { type?: string; srcUrl?: string; dir?: number };
+      if (msg.type === 'rotate' && msg.srcUrl) {
+        rotateBySrc(msg.srcUrl, msg.dir ?? 90);
+      }
     });
   },
 });
@@ -45,7 +54,7 @@ function resolveHost(el: Element | null): HTMLElement | null {
   if (photo) return markHost(photo);
 
   // Lightbox: a plain <img> inside the modal viewer.
-  const modal = el.closest<HTMLElement>('[aria-modal="true"]');
+  const modal = el.closest<HTMLElement>(LIGHTBOX_SEL);
   if (modal) {
     const img =
       el instanceof HTMLImageElement && el.src.includes(MEDIA_URL)
@@ -78,68 +87,115 @@ function rotationTargets(host: HTMLElement): HTMLElement[] {
   for (const img of host.querySelectorAll<HTMLImageElement>('img')) {
     if (img.src.includes(MEDIA_URL)) targets.push(img);
   }
-  if (!targets.length && host instanceof HTMLElement) {
+  if (!targets.length) {
     const self = host.querySelector<HTMLImageElement>('img');
     if (self) targets.push(self);
   }
   return targets;
 }
 
-function rotate(host: HTMLElement) {
-  const angle = (Number(host.getAttribute(ANGLE_ATTR) || 0) + 90) % 360;
-  host.setAttribute(ANGLE_ATTR, String(angle));
-
-  // A quarter-turned image must shrink to stay inside X's fixed-aspect frame.
+/** How much to scale a quarter-turned image so it fills the space available.
+ *  In the lightbox that space is the whole modal slot (so sideways art can
+ *  grow to fill the viewport, not just the letterboxed frame); in the
+ *  timeline it is the fixed frame, which we must not overflow into the feed. */
+function fitScale(host: HTMLElement): number {
   const rect = host.getBoundingClientRect();
-  const fit =
-    angle % 180 !== 0 && rect.width && rect.height
-      ? Math.min(rect.width, rect.height) / Math.max(rect.width, rect.height)
-      : 1;
+  if (!rect.width || !rect.height) return 1;
 
-  for (const target of rotationTargets(host)) {
-    target.style.transition = 'transform 0.15s ease';
-    target.style.transform =
-      angle === 0 ? '' : `rotate(${angle}deg) scale(${fit})`;
+  const slot = host.closest<HTMLElement>(SLOT_SEL);
+  if (slot && host.closest(LIGHTBOX_SEL)) {
+    unclip(host, slot);
+    const avail = slot.getBoundingClientRect();
+    // After a quarter turn the on-screen bounds are height × width.
+    return Math.min(avail.width / rect.height, avail.height / rect.width);
+  }
+  return Math.min(rect.width, rect.height) / Math.max(rect.width, rect.height);
+}
+
+/** Lift the overflow:hidden clips between the image and its modal slot so a
+ *  scaled-up rotation isn't cropped back to the original frame. */
+function unclip(from: HTMLElement, to: HTMLElement) {
+  let el: HTMLElement | null = from;
+  while (el && el !== to) {
+    if (getComputedStyle(el).overflow !== 'visible') el.style.overflow = 'visible';
+    el = el.parentElement;
   }
 }
 
-function rotateBySrc(srcUrl: string) {
+function rotate(host: HTMLElement, dir: number) {
+  const angle =
+    (((Number(host.getAttribute(ANGLE_ATTR) || 0) + dir) % 360) + 360) % 360;
+  host.setAttribute(ANGLE_ATTR, String(angle));
+
+  const scale = angle % 180 === 0 ? 1 : fitScale(host);
+  for (const target of rotationTargets(host)) {
+    target.style.transformOrigin = 'center center';
+    target.style.transition = 'transform 0.2s ease';
+    target.style.transform =
+      angle === 0 ? '' : `rotate(${angle}deg) scale(${scale})`;
+  }
+}
+
+function rotateBySrc(srcUrl: string, dir: number) {
   for (const img of document.querySelectorAll<HTMLImageElement>('img')) {
     if (img.src === srcUrl) {
       const host = resolveHost(img);
-      if (host) rotate(host);
+      if (host) rotate(host, dir);
       return;
     }
   }
 }
 
-function attachButton(host: HTMLElement) {
+function attachButtons(host: HTMLElement) {
+  const group = document.createElement('div');
+  group.className = GROUP_CLASS;
+  group.appendChild(makeButton(host, -90, true, '左に90°回転'));
+  group.appendChild(makeButton(host, 90, false, '右に90°回転'));
+  host.appendChild(group);
+}
+
+function makeButton(
+  host: HTMLElement,
+  dir: number,
+  ccw: boolean,
+  label: string,
+): HTMLButtonElement {
   const btn = document.createElement('button');
   btn.className = BTN_CLASS;
   btn.type = 'button';
-  btn.title = '90°回転';
-  btn.setAttribute('aria-label', '画像を90°回転');
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
+  const inner = ccw ? `<g transform="translate(24,0) scale(-1,1)">${ARROW}</g>` : ARROW;
   btn.innerHTML =
     '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" ' +
     'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" ' +
-    'stroke-linejoin="round"><path d="M21 2v6h-6"/>' +
-    '<path d="M21 8a9 9 0 1 0 2.2 5.7"/></svg>';
+    `stroke-linejoin="round">${inner}</svg>`;
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    rotate(host);
+    rotate(host, dir);
   });
-  host.appendChild(btn);
+  return btn;
 }
 
 function injectStyles() {
   const style = document.createElement('style');
   style.textContent = `
-    .${BTN_CLASS} {
+    .${GROUP_CLASS} {
       position: absolute;
       top: 8px;
       right: 8px;
       z-index: 10;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    [${HOST_ATTR}]:hover .${GROUP_CLASS},
+    .${GROUP_CLASS}:focus-within {
+      opacity: 1;
+    }
+    .${BTN_CLASS} {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -151,22 +207,16 @@ function injectStyles() {
       background: rgba(0, 0, 0, 0.6);
       color: #fff;
       cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    [${HOST_ATTR}]:hover .${BTN_CLASS},
-    .${BTN_CLASS}:focus-visible {
-      opacity: 1;
     }
     .${BTN_CLASS}:hover {
       background: rgba(0, 0, 0, 0.8);
     }
-    .${DISABLED_CLASS} .${BTN_CLASS} {
+    .${DISABLED_CLASS} .${GROUP_CLASS} {
       display: none;
     }
-    /* The lightbox covers the image's top-right corner with a 60x60
-       panel-toggle hit area, so the button moves to the bottom-right. */
-    [aria-modal="true"] [${HOST_ATTR}] > .${BTN_CLASS} {
+    /* The lightbox covers the image's top-right corner with a panel-toggle
+       hit area, so the buttons move to the bottom-right there. */
+    ${LIGHTBOX_SEL} [${HOST_ATTR}] > .${GROUP_CLASS} {
       top: auto;
       bottom: 8px;
     }
