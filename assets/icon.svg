@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4c8dff"/>
+      <stop offset="1" stop-color="#2f5fd8"/>
+    </linearGradient>
+  </defs>
+  <!-- rounded-square background -->
+  <rect x="0" y="0" width="128" height="128" rx="28" fill="url(#bg)"/>
+  <!-- portrait photo card (the "fixed" upright image) -->
+  <g>
+    <rect x="28" y="22" width="48" height="62" rx="7" fill="#ffffff"/>
+    <!-- sun -->
+    <circle cx="42" cy="38" r="6" fill="#f7b733"/>
+    <!-- mountains -->
+    <path d="M32 74 L48 52 L57 62 L64 54 L72 74 Z" fill="#2f5fd8"/>
+  </g>
+  <!-- clockwise rotate arrow around the bottom-right -->
+  <path d="M 103.9 45.4 A 44 44 0 0 1 60.2 107.8" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round"/>
+  <polygon points="42,108 66,92 68,118" fill="#ffffff"/>
+</svg>

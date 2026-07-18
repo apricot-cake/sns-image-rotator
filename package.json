@@ -1,6 +1,6 @@
 {
   "name": "sns-image-rotator",
-  "description": "Rotate images on X (Twitter) with one click",
+  "description": "Rotate images on X (Twitter) and Bluesky with one click",
   "private": true,
   "version": "0.1.0",
   "type": "module",
