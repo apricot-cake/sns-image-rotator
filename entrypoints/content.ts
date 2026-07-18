@@ -203,6 +203,7 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     d.xirPb = spacer.style.paddingBottom;
     d.xirSizerH = sizer.style.height;
     d.xirSizerW = sizer.style.width;
+    d.xirSizerM = sizer.style.margin;
     d.xirCapW = widthCap ? widthCap.style.maxWidth : '';
   }
   const w = Number(d.xirW);
@@ -213,6 +214,7 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     spacer.style.paddingBottom = d.xirPb ?? '';
     sizer.style.height = d.xirSizerH ?? '';
     sizer.style.width = d.xirSizerW ?? '';
+    sizer.style.margin = d.xirSizerM ?? '';
     if (widthCap) widthCap.style.maxWidth = d.xirCapW ?? '';
     for (const t of targets) {
       t.style.width = t.style.height = t.style.top = t.style.left = '';
@@ -223,20 +225,24 @@ function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
     return true;
   }
 
-  // Fill the content column (the cap's parent) at the rotated aspect ratio,
-  // but cap the height to the viewport so a tall rotation stays fully on
-  // screen instead of overflowing: past that point the image letterboxes
-  // slightly within the column rather than being cut off.
+  // Size the frame to the rotated image so it fills it with no letterbox:
+  // width-fit to the content column, but if that would overflow the viewport
+  // height, height-fit instead and let the frame hug the (now narrower)
+  // image — the whole image stays on screen with no side bars, the same way
+  // X shows a natively tall image.
   const contentW = widthCap?.parentElement
     ? widthCap.parentElement.getBoundingClientRect().width
     : w;
   const ratio = Math.min(w / h, FRAME_ASPECT_CAP);
   const maxH = Math.max(300, window.innerHeight - 64);
-  const frameW = contentW;
-  const frameH = Math.min(frameW * ratio, maxH);
+  const frameH = Math.min(contentW * ratio, maxH);
+  const frameW = frameH / ratio;
   if (widthCap) widthCap.style.maxWidth = `${contentW}px`;
   sizer.style.width = `${frameW}px`;
   sizer.style.height = `${frameH}px`;
+  // Centre the frame when it is narrower than the column (a height-capped
+  // tall image) so any leftover column space is even on both sides.
+  sizer.style.margin = '0 auto';
   spacer.style.paddingBottom = `${((frameH / frameW) * 100).toFixed(4)}%`;
   const scale = Math.min(frameW / h, frameH / w);
   for (const t of targets) {
