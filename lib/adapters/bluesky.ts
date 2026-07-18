@@ -1,12 +1,14 @@
 // Bluesky (bsky.app) adapter. Unlike X, Bluesky renders each post photo as a
 // real <img> (object-fit: cover) filling a positioned `role="button"` frame,
 // so there is only one element to rotate. The frame's size comes from a CSS
-// `aspect-ratio` on an ancestor: single photos take the image's own ratio,
-// multi-photo grids use square cells. Rotated images are scaled to fit inside
-// that fixed frame (never enlarged past it), so nothing spills out of the
-// frame's overflow:hidden — square grid cells land exactly, wider/taller single
-// photos sit letterboxed. Resizing the frame to the rotated ratio (as the X
-// adapter does) is left for later; it needs on-device DOM work.
+// `aspect-ratio` on the button's parent, and its reserved height from a
+// `padding-top` spacer two levels up: single photos take the image's own ratio
+// (portrait ones capped to a square), multi-photo grids use square cells.
+//
+// Single timeline photos get that frame resized so a quarter-turned image fills
+// the post column with no letterbox — the same result as the X adapter. Grid
+// cells (resizing one would break the grid) and any unrecognised structure fall
+// back to scaling the rotation down to fit inside the fixed frame.
 
 import { type SiteAdapter } from '../adapter';
 
@@ -14,6 +16,11 @@ import { type SiteAdapter } from '../adapter';
 // feed_fullsize in the viewer). External link-card previews reuse the same
 // path, so a media <img> alone doesn't prove a rotatable photo — see resolveHost.
 const MEDIA_PATH = '/img/feed_';
+
+// A resized single-photo frame takes the rotated image's own aspect ratio so it
+// fills the column edge to edge. This only bounds pathological cases (a panorama
+// rotated upright) at height = 3x width; normal sideways art never reaches it.
+const FRAME_ASPECT_CAP = 3;
 
 export const blueskyAdapter: SiteAdapter = {
   resolveHost,
@@ -31,9 +38,11 @@ function resolveHost(el: Element | null): HTMLElement | null {
   return null;
 }
 
-/** Rotate the frame's photo in place, scaling a quarter turn down so the whole
- *  image stays inside the fixed frame. */
+/** Apply the absolute angle: resize the frame for single timeline photos, else
+ *  scale the rotation to fit inside the fixed frame (square grid cells, etc.). */
 function applyRotation(host: HTMLElement, angle: number) {
+  if (rotateResizingFrame(host, angle)) return;
+
   const scale = angle % 180 === 0 ? 1 : fitScale(host);
   for (const img of host.querySelectorAll<HTMLImageElement>(`img[src*="${MEDIA_PATH}"]`)) {
     img.style.transformOrigin = 'center center';
@@ -47,4 +56,110 @@ function fitScale(host: HTMLElement): number {
   const rect = host.getBoundingClientRect();
   if (!rect.width || !rect.height) return 1;
   return Math.min(rect.width, rect.height) / Math.max(rect.width, rect.height);
+}
+
+/** The aspect-ratio frame div that owns a single post photo: the button's own
+ *  parent, carrying the inline `aspect-ratio` that shapes the photo. Grid cells
+ *  lack this (their aspect-ratio sits on the whole grid, two levels higher), so
+ *  finding it here doubles as the single-photo guard. */
+function findFrame(host: HTMLElement): HTMLElement | null {
+  const frame = host.parentElement;
+  if (frame && (frame.getAttribute('style') || '').includes('aspect-ratio')) return frame;
+  return null;
+}
+
+/** The spacer whose inline `padding-top` reserves the frame's height, just above
+ *  the `inset:0` overlay that holds the frame. Resizing its padding is how we
+ *  shrink the reserved block to the rotated image. */
+function findSizer(frame: HTMLElement): HTMLElement | null {
+  let el = frame.parentElement;
+  for (let i = 0; i < 4 && el; i++, el = el.parentElement) {
+    if ((el.getAttribute('style') || '').includes('padding-top')) return el;
+  }
+  return null;
+}
+
+/** Quarter-turned single timeline photos get their frame resized to fill the
+ *  post column at the rotated image's aspect ratio — as large as it fits with no
+ *  letterbox — instead of staying letterboxed in the original frame. Returns
+ *  false (grid cells, unrecognised structure, off-screen frame) to fall back to
+ *  the fit-in-frame scaling. */
+function rotateResizingFrame(host: HTMLElement, angle: number): boolean {
+  const frame = findFrame(host);
+  if (!frame) return false;
+  // The `inset:0` overlay that centres the frame inside the reserved block, and
+  // the `padding-top` spacer that gives the block its height.
+  const reserve = frame.parentElement;
+  const sizer = findSizer(frame);
+  const img = host.querySelector<HTMLImageElement>(`img[src*="${MEDIA_PATH}"]`);
+  if (!reserve || !sizer || !img) return false;
+
+  const d = host.dataset;
+  if (!d.sirW) {
+    const rect = frame.getBoundingClientRect();
+    if (!rect.width || !rect.height) return false;
+    d.sirW = String(rect.width);
+    d.sirH = String(rect.height);
+    d.sirFrameAr = frame.style.aspectRatio;
+    d.sirFrameW = frame.style.width;
+    d.sirFrameH = frame.style.height;
+    d.sirFrameFlex = frame.style.flex;
+    d.sirReserveJc = reserve.style.justifyContent;
+    d.sirReserveAi = reserve.style.alignItems;
+    d.sirSizerPt = sizer.style.paddingTop;
+    d.sirImg = img.getAttribute('style') ?? '';
+  }
+  const w = Number(d.sirW);
+  const h = Number(d.sirH);
+
+  if (angle % 180 === 0) {
+    frame.style.aspectRatio = d.sirFrameAr ?? '';
+    frame.style.width = d.sirFrameW ?? '';
+    frame.style.height = d.sirFrameH ?? '';
+    frame.style.flex = d.sirFrameFlex ?? '';
+    reserve.style.justifyContent = d.sirReserveJc ?? '';
+    reserve.style.alignItems = d.sirReserveAi ?? '';
+    sizer.style.paddingTop = d.sirSizerPt ?? '';
+    // Restore lays the photo back at 100% x 100% cover; 180 just flips it.
+    img.setAttribute('style', d.sirImg ?? '');
+    img.style.transformOrigin = 'center center';
+    img.style.transition = 'none';
+    img.style.transform = angle === 0 ? '' : 'rotate(180deg)';
+    return true;
+  }
+
+  // Size the frame to the rotated image: width-fit to the column, but if that
+  // would overflow the viewport height, height-fit instead and let the frame
+  // hug the (now narrower) image — the whole image stays on screen with no side
+  // bars, the same way Bluesky shows a natively tall image.
+  const contentW = sizer.getBoundingClientRect().width;
+  if (!contentW) return false;
+  const ratio = Math.min(w / h, FRAME_ASPECT_CAP);
+  const maxH = Math.max(300, window.innerHeight - 64);
+  const frameH = Math.min(contentW * ratio, maxH);
+  const frameW = frameH / ratio;
+
+  sizer.style.paddingTop = `${frameH}px`;
+  // Centre the frame when it is narrower than the column (a height-capped tall
+  // image) so any leftover column space is even on both sides.
+  reserve.style.justifyContent = 'center';
+  reserve.style.alignItems = 'center';
+  frame.style.aspectRatio = 'auto';
+  frame.style.width = `${frameW}px`;
+  frame.style.height = `${frameH}px`;
+  frame.style.flex = '0 0 auto';
+
+  const scale = Math.min(frameW / h, frameH / w);
+  // Lock the photo to its original box so object-fit:cover keeps the same crop,
+  // centre it in the resized frame, then rotate and scale it to fill. Snap
+  // instantly: the frame resizes in one step, so animating the image would leave
+  // it spinning inside an already-resized frame.
+  img.style.width = `${w}px`;
+  img.style.height = `${h}px`;
+  img.style.left = '50%';
+  img.style.top = '50%';
+  img.style.transformOrigin = 'center center';
+  img.style.transition = 'none';
+  img.style.transform = `translate(-50%, -50%) rotate(${angle}deg) scale(${scale})`;
+  return true;
 }
