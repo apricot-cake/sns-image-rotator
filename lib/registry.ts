@@ -5,9 +5,11 @@
 import type { SiteAdapter } from './adapter';
 import { siteForHost } from './sites';
 import { xAdapter } from './adapters/x';
+import { blueskyAdapter } from './adapters/bluesky';
 
 const ADAPTERS: Record<string, SiteAdapter> = {
   x: xAdapter,
+  bluesky: blueskyAdapter,
 };
 
 /** The adapter serving `hostname`, or undefined if no site matches. */

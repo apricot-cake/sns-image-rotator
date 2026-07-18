@@ -20,6 +20,11 @@ export const SITES: SiteDescriptor[] = [
     hosts: ['x.com', 'twitter.com'],
     matches: ['*://x.com/*', '*://twitter.com/*'],
   },
+  {
+    id: 'bluesky',
+    hosts: ['bsky.app'],
+    matches: ['*://bsky.app/*'],
+  },
 ];
 
 /** Every site's match patterns, for the content script and context menu. */

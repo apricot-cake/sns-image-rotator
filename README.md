@@ -1,6 +1,6 @@
 # SNS Image Rotator（SNS画像回転）
 
-SNS のタイムラインに流れてくる横向き画像を、ワンクリックで回転できる Chrome 拡張機能。現在は X (Twitter) に対応、Bluesky 対応を進行中。
+SNS のタイムラインに流れてくる横向き画像を、ワンクリックで回転できる Chrome 拡張機能。X (Twitter) と Bluesky (bsky.app) に対応（Bluesky はタイムライン写真の回転。拡大表示〈ライトボックス〉での回転は今後対応予定）。
 
 表示名は多言語対応（`_locales`）: 日本語環境では「SNS画像回転」、その他では "SNS Image Rotator"。
 
