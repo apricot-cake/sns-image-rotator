@@ -94,9 +94,9 @@ function rotateLightbox(host: HTMLElement, angle: number) {
   if (!img) return;
   const scale = angle % 180 === 0 ? 1 : lightboxFitScale(host, img);
   img.style.transformOrigin = 'center center';
-  // Animate the spin: the slot is fixed here, so a smooth turn reads well (the
-  // timeline snaps instead because its frame resizes in the same step).
-  img.style.transition = 'transform 0.2s ease';
+  // Snap instantly, matching the timeline (whose frame resizes in one step and
+  // so can't animate) — one rotation behaviour across the site.
+  img.style.transition = 'none';
   img.style.transform = angle === 0 ? '' : `rotate(${angle}deg) scale(${scale})`;
 }
 
