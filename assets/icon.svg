@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <!-- flat rounded-square background -->
-  <rect x="0" y="0" width="128" height="128" rx="28" fill="#3b6fe0"/>
-  <!-- Material Symbols "rotate_90_degrees_cw" (rounded, 48px), Apache License 2.0
-       https://github.com/google/material-design-icons -->
-  <g transform="translate(15.5 112.5) scale(0.101)" fill="#ffffff">
-    <path d="M440-80q-150 0-255-105T80-440q0-151 105-257.5T441-804h31l-53-53q-9-9-9-21t9-21q9-9 21-9t21 9l104 104q5 5 7 10t2 11q0 6-2 11t-7 10L461-649q-9 9-21 9t-21-9q-9-9-9-21t9-21l53-53h-31q-126 0-213.5 89T140-440q0 125 87.5 212.5T440-140q40 0 78-11t73-31q11-6 23-2t17 15q6 11 2.5 23.5T619-127q-42 23-86.5 35T440-80Zm237-161L497-421q-5-5-7-10t-2-11q0-6 2-11t7-10l180-180q5-5 10-7t11-2q6 0 11 2t10 7l180 180q5 5 7 10t2 11q0 6-2 11t-7 10L719-241q-5 5-10 7t-11 2q-6 0-11-2t-10-7Zm21-61 136-136-136-136-136 136 136 136Zm0-136Z"/>
+  <rect width="128" height="128" rx="20" fill="#334155"/>
+  <!-- Image-orientation mark: a portrait 1x2 and a landscape 2x1 frame sharing
+       the bottom-left cell, forming an L of three squares. -->
+  <g fill="none" stroke="#ffffff" stroke-width="8" stroke-linejoin="miter" stroke-linecap="butt">
+    <path d="M27 24 L61 24 Q64 24 64 27 L64 64 L101 64 Q104 64 104 67 L104 101 Q104 104 101 104 L27 104 Q24 104 24 101 L24 27 Q24 24 27 24 Z"/>
+    <path d="M24 64 L64 64"/>
+    <path d="M64 64 L64 104"/>
   </g>
 </svg>

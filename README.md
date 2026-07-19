@@ -51,4 +51,4 @@ npm run compile  # 型チェック
 
 回転ボタンのアイコンは [Lucide](https://lucide.dev/)（`rotate-cw` / `rotate-ccw`、MIT License）を使用しています。
 
-拡張機能アイコンは [Material Symbols](https://fonts.google.com/icons)（`rotate_90_degrees_cw`、Apache License 2.0）を使用しています。
+拡張機能アイコンはオリジナル（縦横フレームが 1 マスを共有して L 字に重なる、画像の向きを表すマーク）。
