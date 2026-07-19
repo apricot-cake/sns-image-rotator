@@ -3,7 +3,7 @@
     "message": "社交媒体图片旋转器"
   },
   "extDescription": {
-    "message": "一键将社交媒体上横向的插画转正的扩展程序。"
+    "message": "将社交媒体上横躺的插画就地转正的扩展程序。"
   },
   "menuRotateLeft": {
     "message": "将图片向左旋转 90°"

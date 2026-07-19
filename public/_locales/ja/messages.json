@@ -3,7 +3,7 @@
     "message": "SNS画像回転"
   },
   "extDescription": {
-    "message": "SNSに流れてくる横向きのイラストを、ワンクリックで縦に戻す拡張機能。"
+    "message": "SNSに流れてくる横倒しのイラストを、その場で正しい向きに戻す拡張機能。"
   },
   "menuRotateLeft": {
     "message": "画像を左に90°回転"

@@ -3,7 +3,7 @@
     "message": "SNS 이미지 회전"
   },
   "extDescription": {
-    "message": "SNS에 올라오는 옆으로 누운 일러스트를 클릭 한 번으로 똑바로 세워 주는 확장 프로그램."
+    "message": "SNS에 올라오는 옆으로 누운 일러스트를 그 자리에서 똑바로 세워 주는 확장 프로그램."
   },
   "menuRotateLeft": {
     "message": "이미지를 왼쪽으로 90° 회전"
