@@ -1,5 +1,6 @@
 node_modules/
 .output/
+.claude/settings.local.json
 .wxt/
 stats.html
 stats-*.json
