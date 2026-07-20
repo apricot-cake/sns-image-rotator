@@ -51,10 +51,6 @@ npm run compile  # 型チェック
 
 回転ボタンのアイコンには [Lucide](https://lucide.dev/) の `rotate-cw` / `rotate-ccw` を使っています（MIT License）。
 
-拡張機能のアイコンはオリジナルです（縦と横のフレームが 1 マスを共有した、画像の向きを表すマーク）。
-
-スクリーンショットの作例に使っているイラストは作者自身のものです。MIT License の対象はコードで、このイラストは含みません。
-
 ## ライセンス
 
 [MIT License](LICENSE)
