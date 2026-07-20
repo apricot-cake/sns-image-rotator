@@ -1,39 +1,41 @@
-# SNS画像回転
+# Social Media Image Rotator
 
-SNS で横倒しのまま流れてくる画像を、その場で正しい向きに回せる Chrome 拡張機能です。X (Twitter) と Bluesky に対応し、タイムライン・引用ポスト・拡大表示（ライトボックス）のいずれでも回せます。
+<p align="center"><strong>English</strong> · <a href="README.ja.md">日本語</a></p>
 
-![横倒しのイラストを右クリックメニューから 90° 回転させ、正しい向きで大きく表示するまで](docs/screenshot.png)
+A Chrome extension that turns sideways images upright where they sit. Works on X (Twitter) and Bluesky, in the timeline, in quoted posts, and in the lightbox.
 
-UI は en / ja / ko / zh_CN / zh_TW に対応し、ブラウザの言語に合わせて切り替わります。
+![A toppled illustration rotated 90° from the context menu and shown upright at a larger size](docs/screenshot-en.png)
 
-## 既製の回転拡張機能が X で効かない理由
+The UI ships in en / ja / ko / zh_CN / zh_TW and follows the browser's language.
 
-X はツイート画像を `<img>` ではなく `<div>` の CSS 背景として描画し、`<img>` は透明な当たり判定として上に重ねています。汎用の回転拡張機能は `<img>` だけを回すので、X では見た目が変わりません。本拡張は両方を回します。
+## Why other rotation extensions do nothing on X
 
-## 機能
+X paints tweet photos as the CSS background of a `<div>` rather than as an `<img>`, and layers a transparent `<img>` over it as the hit target. General-purpose rotation extensions turn only the `<img>`, so on X nothing appears to change. This one turns both.
 
-- **ホバーボタン**: 画像にマウスを乗せると、左回転・右回転のボタンが出ます。既定はオフで、ポップアップの設定で有効にできます
-- **右クリックメニュー**: 「画像を左/右に 90° 回転」。設定に関係なく常に使えます
+## Features
 
-90° 回すと縦横比が入れ替わるため、向きを変えるだけでは余白や見切れが出ます。そこで表示サイズも作り直します。
+- **Hover buttons**: Point at an image and buttons for turning it left or right appear. Off by default; enable them in the popup
+- **Context menu**: "Rotate image 90° left / right". Always available, whatever the setting
 
-- **拡大表示**: 元の枠ではなくモーダルの使える領域に合わせて拡大します。横倒しの投稿を起こすと、画面の高さをフルに使って表示されます
-- **タイムラインの単独写真**: 枠自体を回転後の縦横比に作り替え、本文と同じ列の幅いっぱいに表示します。元は列幅より狭かった画像も、回転後は列幅まで広がります
-- **縦に長くなりすぎる場合**: 画面の高さを超えないよう抑え、全体が一度に見えるようにします。枠は画像にぴったり合わせて中央に置くので、灰色の帯は出ません
-- **複数枚グリッド・動画サムネイル**: 段組みやプレイヤーを崩さないよう、元の枠内に収めます
+A quarter turn swaps the aspect ratio, so rotating on its own would leave gaps or crop the picture. The displayed size is rebuilt as well.
 
-## インストール
+- **Lightbox**: Scales to the space the modal has rather than to the original frame. Standing a toppled post upright uses the full height of the screen
+- **Single timeline photo**: The frame itself is rebuilt to the rotated aspect ratio and fills the width of the content column. An image that used to sit narrower than the column now reaches its full width
+- **When the result grows too tall**: Height is capped to the screen so the whole image stays visible at once. The frame hugs the image and sits centred, so no grey bands appear
+- **Multi-image grids and video thumbnails**: Kept inside the original frame, leaving the grid and the player undisturbed
 
-[Chrome ウェブストア](https://chromewebstore.google.com/detail/affodfbfgaikjohkhnfmjalnapgjfklf) から入れられます。
+## Install
 
-## 開発
+From the [Chrome Web Store](https://chromewebstore.google.com/detail/affodfbfgaikjohkhnfmjalnapgjfklf).
 
-開発には [WXT](https://wxt.dev/) と TypeScript を使っています。`npm install && npm run build` でビルドすると、読み込む先は `.output/chrome-mv3` です。`npm run dev` なら、保存のたびに自動で再読み込みされます。
+## Development
 
-## クレジット
+Built with [WXT](https://wxt.dev/) and TypeScript. `npm install && npm run build` writes the unpacked extension to `.output/chrome-mv3`, and `npm run dev` reloads it on every save.
 
-回転ボタンのアイコンには [Lucide](https://lucide.dev/) の `rotate-cw` / `rotate-ccw` を使っています（MIT License）。
+## Credits
 
-## ライセンス
+The rotate buttons use [Lucide](https://lucide.dev/)'s `rotate-cw` / `rotate-ccw` (MIT License).
+
+## License
 
 [MIT License](LICENSE)
