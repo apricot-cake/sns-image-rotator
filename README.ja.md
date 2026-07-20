@@ -1,6 +1,6 @@
 # SNS画像回転
 
-<p align="center"><strong>日本語</strong> ・ <a href="README.md">English</a></p>
+<p align="center"><a href="README.md">English</a> ・ <strong>日本語</strong></p>
 
 SNS で横倒しのまま流れてくる画像を、その場で正しい向きに回せる Chrome 拡張機能です。X (Twitter) と Bluesky に対応し、タイムライン・引用ポスト・拡大表示（ライトボックス）のいずれでも回せます。
 
