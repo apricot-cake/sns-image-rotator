@@ -32,6 +32,8 @@ From the [Chrome Web Store](https://chromewebstore.google.com/detail/affodfbfgai
 
 Built with [WXT](https://wxt.dev/) and TypeScript. `npm install && npm run build` writes the unpacked extension to `.output/chrome-mv3`, and `npm run dev` reloads it on every save.
 
+Install [Gitleaks](https://github.com/gitleaks/gitleaks#installing), then run `npm run setup` once in each clone. This enables the tracked pre-commit hook, which scans staged changes and stops the commit if Gitleaks is unavailable. GitHub Actions repeats the scan on every push and pull request.
+
 ## Credits
 
 The rotate buttons use [Lucide](https://lucide.dev/)'s `rotate-cw` / `rotate-ccw` (MIT License).

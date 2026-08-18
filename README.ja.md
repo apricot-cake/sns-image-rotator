@@ -32,6 +32,8 @@ X はツイート画像を `<img>` ではなく `<div>` の CSS 背景として�
 
 開発には [WXT](https://wxt.dev/) と TypeScript を使っています。`npm install && npm run build` でビルドすると、読み込む先は `.output/chrome-mv3` です。`npm run dev` なら、保存のたびに自動で再読み込みされます。
 
+[Gitleaks](https://github.com/gitleaks/gitleaks#installing) をインストールし、clone ごとに一度 `npm run setup` を実行してください。追跡対象のコミット前フックが有効になり、ステージ済みの変更を検査します。Gitleaks を実行できない場合もコミットを止めます。GitHub Actions でも push と pull request のたびに同じ検査を実行します。
+
 ## クレジット
 
 回転ボタンのアイコンには [Lucide](https://lucide.dev/) の `rotate-cw` / `rotate-ccw` を使っています（MIT License）。
